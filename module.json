@@ -2,7 +2,7 @@
   "id": "interactive-merchant-5e",
   "title": "Interactive Merchant 5e",
   "description": "Ein interaktives Händler-System mit Warenkorb, Feilschen-Mechanik und Seelenmünzen-Modus.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "compatibility": {
     "minimum": "11",
     "verified": "11"

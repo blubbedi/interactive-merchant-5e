@@ -22,7 +22,9 @@ jobs:
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v1
       with:
-        files: module.zip
+        files: |
+          module.zip
+          module.json
         name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
