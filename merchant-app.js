@@ -2,7 +2,7 @@
 // 1. INITIALISIERUNG
 // ==========================================
 Hooks.once('ready', () => {
-    console.log("Interactive Merchant 5e | Initialisiert");
+    console.log("Interactive Merchant 5e | Initialisiert (v1.0.6)");
 });
 
 // ==========================================
@@ -98,6 +98,35 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         return super.close(options);
     }
 
+    // --- MENGEN-DIALOG HILFSFUNKTION ---
+    async _promptQuantity(title, maxQty, defaultQty = 1) {
+        return new Promise(resolve => {
+            new Dialog({
+                title: title,
+                content: `
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="font-weight: bold;">Menge (Maximal ${maxQty}):</label>
+                        <input type="number" id="qty-input" value="${defaultQty}" min="1" max="${maxQty}" style="width: 100%;">
+                    </div>
+                `,
+                buttons: {
+                    ok: {
+                        icon: '<i class="fas fa-check"></i>',
+                        label: "Bestätigen",
+                        callback: html => resolve(parseInt(html.find('#qty-input').val()) || 0)
+                    },
+                    cancel: {
+                        icon: '<i class="fas fa-times"></i>',
+                        label: "Abbrechen",
+                        callback: () => resolve(0)
+                    }
+                },
+                default: "ok",
+                render: html => html.find('#qty-input').focus().select()
+            }).render(true);
+        });
+    }
+
     // --- DRAG & DROP ---
     _canDragStart(selector) { return true; }
     _canDragDrop(selector) { return true; }
@@ -120,7 +149,7 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         await this._addToCart(itemId, type);
     }
 
-    // --- HILFSFUNKTIONEN ---
+    // --- HILFSFUNKTIONEN WÄHRUNG ---
     _getSoulCoinQty(actor) {
         if (!actor) return 0;
         const item = actor.items.find(i => i.name === "Seelenmünze");
@@ -218,7 +247,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             this.lastTimestamp = flag.timestamp;
         }
 
-        // Berechnung Summe Kauf-Warenkorb
         let totalBuyCp = 0;
         this.tradeState.buyCart.forEach(item => {
             const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
@@ -226,7 +254,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             totalBuyCp += (finalPrice * item.quantity);
         });
         
-        // Berechnung Summe Verkauf-Warenkorb
         let totalSellCp = 0;
         this.tradeState.sellCart.forEach(item => {
             const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
@@ -278,7 +305,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         const rawMerchantItems = merchant?.items.contents || [];
         const rawPlayerItems = playerCharacter?.items.contents || [];
 
-        // Formatierung des Warenkorbs für die Anzeige (Preise umrechnen)
         const formatCart = (cart) => {
             return cart.map(item => {
                 let displayPrice = "";
@@ -292,9 +318,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             });
         };
 
-        const displayBuyCart = formatCart(this.tradeState.buyCart);
-        const displaySellCart = formatCart(this.tradeState.sellCart);
-
         return {
             isGM: game.user.isGM,
             merchant,
@@ -306,8 +329,8 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             merchantMoney,
             merchantCategories: this._categorizeItems(rawMerchantItems, this.tradeState.buyCart, isSoulMode),
             playerCategories: this._categorizeItems(rawPlayerItems, this.tradeState.sellCart, isSoulMode),
-            buyCart: displayBuyCart,
-            sellCart: displaySellCart,
+            buyCart: formatCart(this.tradeState.buyCart),
+            sellCart: formatCart(this.tradeState.sellCart),
             isPlayerPaying: balanceCp >= 0,
             formattedBalance,
             canTrade: canTrade,
@@ -332,7 +355,16 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             const { index, type } = ev.currentTarget.dataset;
             const cart = (type === "buy" ? this.tradeState.buyCart : this.tradeState.sellCart);
             const item = cart[index];
-            if (item.quantity > 1) item.quantity--; else cart.splice(index, 1);
+            
+            if (item.quantity > 1) {
+                const qtyToRemove = await this._promptQuantity(`Entfernen: ${item.name}`, item.quantity, 1);
+                if (qtyToRemove <= 0) return;
+                
+                item.quantity -= qtyToRemove;
+                if (item.quantity <= 0) cart.splice(index, 1);
+            } else {
+                cart.splice(index, 1);
+            }
             
             await this._updateFlag({ buyCart: this.tradeState.buyCart, sellCart: this.tradeState.sellCart });
         });
@@ -399,10 +431,24 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         const cart = (type === "buy" ? this.tradeState.buyCart : this.tradeState.sellCart);
         const existingEntry = cart.find(entry => entry.id === item.id);
         const maxQty = item.system.quantity || 1;
+        const currentInCart = existingEntry ? existingEntry.quantity : 0;
+        const availableToAdd = maxQty - currentInCart;
+
+        if (availableToAdd <= 0) { 
+            ui.notifications.warn("Nicht genug auf Lager."); 
+            return; 
+        }
+
+        let qtyToAdd = 1;
+        if (availableToAdd > 1) {
+            qtyToAdd = await this._promptQuantity(`Hinzufügen: ${item.name}`, availableToAdd, 1);
+        }
+
+        if (qtyToAdd <= 0) return;
+        if (qtyToAdd > availableToAdd) qtyToAdd = availableToAdd;
 
         if (existingEntry) {
-            if (existingEntry.quantity < maxQty) existingEntry.quantity++;
-            else { ui.notifications.warn("Nicht genug auf Lager."); return; }
+            existingEntry.quantity += qtyToAdd;
         } else {
             cart.push({ 
                 id: item.id, 
@@ -410,7 +456,7 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
                 img: item.img, 
                 price: item.system.price?.value || 0, 
                 denom: item.system.price?.denomination || "gp", 
-                quantity: 1, 
+                quantity: qtyToAdd, 
                 maxQty: maxQty 
             });
         }

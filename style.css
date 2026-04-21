@@ -1,9 +1,247 @@
+/* --- INTERACTIVE MERCHANT 5E - FANTASY THEME --- */
+
 .merchant-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding: 0;
     background: url("../../../ui/parchment.jpg") repeat;
+    color: #191813;
     font-family: "Signika", sans-serif;
+    font-size: 13px;
 }
-.merchant-window .sheet-header { background: url("../../../ui/denim075.png"); color: white; }
-.trade-container { display: flex; gap: 10px; padding: 10px; height: 100%; }
-.inventory-column { flex: 1; border: 1px solid #7a7971; background: rgba(255,255,255,0.2); display: flex; flex-direction: column; }
-.cart-column { flex: 0 0 260px; background: rgba(0,0,0,0.05); border: 2px solid #4b4a44; border-radius: 5px; }
-/* ... Rest wie im Fantasy Theme ... */
+
+.merchant-window .sheet-header {
+    flex: 0 0 auto;
+    padding: 8px 15px;
+    background: url("../../../ui/denim075.png");
+    border-bottom: 2px solid #9f9275;
+    display: flex;
+    align-items: center;
+    color: #f0f0e0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.merchant-window .charname {
+    margin: 0;
+    border: none;
+    font-family: "Modesto Condensed", serif;
+    font-size: 2em;
+    font-weight: 700;
+    color: #f0f0e0;
+    text-shadow: 2px 2px 4px #000;
+    flex: 1;
+    text-align: center;
+}
+
+/* WICHTIG: Flex und min-height: 0 zwingt das Layout in seine Box */
+.trade-container {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    overflow: hidden;
+    min-height: 0; 
+}
+
+.merchant-window .inventory-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #7a7971;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+}
+
+.column-header-container {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #9f9275;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.merchant-bg { background: linear-gradient(to bottom, #e3dec9, #d0c8b0); }
+.player-bg { background: linear-gradient(to bottom, #dbe3c9, #c5d0b0); }
+
+/* WICHTIG: Die scrollbare Zone */
+.merchant-window .scrollable {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    scrollbar-width: thin;
+    padding: 0;
+    margin: 0;
+}
+
+.category-header {
+    background: rgba(0, 0, 0, 0.8);
+    color: #d0c8b0;
+    padding: 3px 8px;
+    font-family: "Modesto Condensed", serif;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-top: 1px solid #5c5c5c;
+    border-bottom: 1px solid #5c5c5c;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.category-list { list-style: none; margin: 0; padding: 0; }
+
+.merchant-window .item {
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    cursor: grab;
+    transition: all 0.15s ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.merchant-window .item:nth-child(even) { background: rgba(0,0,0,0.03); }
+
+/* NEU: Optisches Feedback beim Hover */
+.merchant-window .item:hover { 
+    background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(212,175,55,0.1) 100%);
+    transform: scale(1.01);
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+    border-left: 3px solid #d4af37;
+    z-index: 1;
+}
+
+.merchant-window .item:active { cursor: grabbing; }
+
+.item-name { display: flex; align-items: center; font-weight: 500; }
+.item-name img { 
+    border: 1px solid rgba(0,0,0,0.3); 
+    border-radius: 2px; 
+    margin-right: 6px; 
+    background: #000;
+}
+.price { font-family: "Modesto Condensed", serif; color: #555; font-size: 1.1em; }
+
+.merchant-window .item.out-of-stock {
+    opacity: 0.5 !important;
+    filter: grayscale(100%) !important;
+    background: repeating-linear-gradient(45deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px) !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.merchant-window .cart-column {
+    flex: 0 0 260px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #4b4a44;
+    background: url("../../../ui/parchment.jpg");
+    border-radius: 5px;
+    padding: 0;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.cart-column h3 {
+    background: #4b4a44;
+    color: #f0f0e0;
+    margin: 0;
+    padding: 5px;
+    text-align: center;
+    font-family: "Modesto Condensed", serif;
+    font-size: 1.3em;
+    border-bottom: 2px solid #2c2b25;
+}
+
+.cart-box {
+    padding: 5px;
+    background: rgba(0,0,0,0.02);
+}
+
+.merchant-window .cart-item {
+    padding: 6px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.95em;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    transition: transform 0.1s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.merchant-window .cart-item:hover { transform: translateX(2px); box-shadow: 0 0 5px rgba(212,175,55,0.5); }
+.merchant-window .cart-item.buy { background: #e8f5e9; border-left: 4px solid #2e7d32; }
+.merchant-window .cart-item.sell { background: #ffebee; border-left: 4px solid #c62828; }
+
+.haggle-box {
+    flex: 0 0 auto;
+    margin: 8px;
+    padding: 8px;
+    background: rgba(0,0,0,0.05);
+    border: 1px dashed #7a7971;
+    border-radius: 5px;
+    text-align: center;
+}
+.haggle-btn {
+    background: #d0c8b0;
+    border: 1px solid #7a7971;
+    color: #191813;
+    transition: all 0.2s;
+}
+.haggle-btn:hover { background: #fff; box-shadow: 0 0 5px #d4af37; }
+
+.balance-box {
+    flex: 0 0 auto;
+    padding: 10px;
+    background: #e3dec9;
+    border-top: 2px solid #4b4a44;
+}
+.total-row {
+    font-size: 1.2em;
+    font-family: "Modesto Condensed", serif;
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+    margin-bottom: 5px;
+}
+.negative { color: #c62828; }
+.positive { color: #2e7d32; }
+
+/* WICHTIG: Footer starr unten */
+.sheet-footer {
+    flex: 0 0 auto;
+    padding: 10px;
+    background: url("../../../ui/denim075.png");
+    border-top: 2px solid #9f9275;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.sheet-footer button {
+    height: 40px;
+    line-height: 38px;
+    font-family: "Modesto Condensed", serif;
+    font-size: 1.2em;
+    border: 1px solid #000;
+    box-shadow: inset 0 0 5px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.5);
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.player-accept { background: linear-gradient(to bottom, #4a7c46, #2d5a27); color: #fff; text-shadow: 1px 1px 2px #000; }
+.player-accept:hover:not(:disabled) { background: linear-gradient(to bottom, #5da558, #3a7532); box-shadow: 0 0 10px #5da558; }
+.player-cancel { background: linear-gradient(to bottom, #a33e3e, #7a2525); color: #fff; text-shadow: 1px 1px 2px #000; }
+.player-cancel:hover { background: linear-gradient(to bottom, #c94f4f, #962d2d); }
+button:disabled { background: #555; color: #aaa; border: 1px solid #333; cursor: not-allowed; box-shadow: none; filter: grayscale(100%); }
+
+.merchant-setup-window { padding: 15px; background: url("../../../ui/parchment.jpg"); }
+.setup-header { text-align: center; border-bottom: 2px solid #4b4a44; margin-bottom: 15px; }
+.setup-header h2 { font-family: "Modesto Condensed", serif; font-size: 2em; border: none; }
