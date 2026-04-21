@@ -179,7 +179,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             item.system.quantity = remainingQty;
             item.isStackFull = (remainingQty === 0);
 
-            // Bugfix: Sicherheitsabfrage für fehlende Preise bei Custom-Items
             const priceValue = item.system.price?.value || 0;
             const priceDenom = item.system.price?.denomination || "gp";
 
@@ -219,6 +218,7 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             this.lastTimestamp = flag.timestamp;
         }
 
+        // Berechnung Summe Kauf-Warenkorb
         let totalBuyCp = 0;
         this.tradeState.buyCart.forEach(item => {
             const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
@@ -226,6 +226,7 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             totalBuyCp += (finalPrice * item.quantity);
         });
         
+        // Berechnung Summe Verkauf-Warenkorb
         let totalSellCp = 0;
         this.tradeState.sellCart.forEach(item => {
             const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
@@ -277,6 +278,23 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         const rawMerchantItems = merchant?.items.contents || [];
         const rawPlayerItems = playerCharacter?.items.contents || [];
 
+        // Formatierung des Warenkorbs für die Anzeige (Preise umrechnen)
+        const formatCart = (cart) => {
+            return cart.map(item => {
+                let displayPrice = "";
+                if (isSoulMode) {
+                    const gpPrice = this._toCopper(item.price || 0, item.denom || "gp") / 100;
+                    displayPrice = (gpPrice / 1000).toFixed(3) + " SC";
+                } else {
+                    displayPrice = (item.price || 0) + " " + (item.denom || "gp");
+                }
+                return { ...item, displayPrice };
+            });
+        };
+
+        const displayBuyCart = formatCart(this.tradeState.buyCart);
+        const displaySellCart = formatCart(this.tradeState.sellCart);
+
         return {
             isGM: game.user.isGM,
             merchant,
@@ -288,8 +306,8 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             merchantMoney,
             merchantCategories: this._categorizeItems(rawMerchantItems, this.tradeState.buyCart, isSoulMode),
             playerCategories: this._categorizeItems(rawPlayerItems, this.tradeState.sellCart, isSoulMode),
-            buyCart: this.tradeState.buyCart,
-            sellCart: this.tradeState.sellCart,
+            buyCart: displayBuyCart,
+            sellCart: displaySellCart,
             isPlayerPaying: balanceCp >= 0,
             formattedBalance,
             canTrade: canTrade,
@@ -303,7 +321,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
     activateListeners(html) {
         super.activateListeners(html);
         
-        // Bugfix: Explizites Binden von Drag&Drop
         if (this._dragDrop) {
             this._dragDrop.forEach(d => d.bind(html[0]));
         }
@@ -317,7 +334,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             const item = cart[index];
             if (item.quantity > 1) item.quantity--; else cart.splice(index, 1);
             
-            // Bugfix: Nur Flag updaten, das Neuladen übernimmt der Hook
             await this._updateFlag({ buyCart: this.tradeState.buyCart, sellCart: this.tradeState.sellCart });
         });
 
@@ -388,7 +404,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             if (existingEntry.quantity < maxQty) existingEntry.quantity++;
             else { ui.notifications.warn("Nicht genug auf Lager."); return; }
         } else {
-            // Bugfix: Sicheres Auslesen der Preise
             cart.push({ 
                 id: item.id, 
                 name: item.name, 
@@ -400,7 +415,6 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             });
         }
         
-        // Bugfix: await nutzen, um das Render-Verhalten der UI zu synchronisieren
         await this._updateFlag({ buyCart: this.tradeState.buyCart, sellCart: this.tradeState.sellCart });
     }
 
