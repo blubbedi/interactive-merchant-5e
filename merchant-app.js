@@ -2,7 +2,7 @@
 // 1. INITIALISIERUNG
 // ==========================================
 Hooks.once('ready', () => {
-    console.log("Interactive Merchant 5e | Initialisiert (v1.0.6)");
+    console.log("Interactive Merchant 5e | Initialisiert (v1.0.7)");
 });
 
 // ==========================================
@@ -213,7 +213,8 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
 
             if (isSoulMode) {
                 const gpPrice = this._toCopper(priceValue, priceDenom) / 100;
-                item.displayPrice = (gpPrice / 1000).toFixed(3) + " SC";
+                // DEUTSCHE FORMATIERUNG MIT KOMMA (z.B. 4,25 SC)
+                item.displayPrice = (gpPrice / 1000).toFixed(2).replace('.', ',') + " SC";
             } else {
                 item.displayPrice = priceValue + " " + priceDenom;
             }
@@ -271,7 +272,8 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
 
         if (isSoulMode) {
             const scRate = 100000;
-            formattedBalance = (Math.abs(balanceCp) / scRate).toFixed(2) + " SC";
+            // DEUTSCHE FORMATIERUNG DER GESAMTSUMME
+            formattedBalance = (Math.abs(balanceCp) / scRate).toFixed(2).replace('.', ',') + " SC";
             playerMoney = this._getSoulCoinQty(playerCharacter);
             merchantMoney = this._getSoulCoinQty(merchant);
 
@@ -310,7 +312,8 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
                 let displayPrice = "";
                 if (isSoulMode) {
                     const gpPrice = this._toCopper(item.price || 0, item.denom || "gp") / 100;
-                    displayPrice = (gpPrice / 1000).toFixed(3) + " SC";
+                    // DEUTSCHE FORMATIERUNG IM WARENKORB
+                    displayPrice = (gpPrice / 1000).toFixed(2).replace('.', ',') + " SC";
                 } else {
                     displayPrice = (item.price || 0) + " " + (item.denom || "gp");
                 }
@@ -583,7 +586,8 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
 
             let totalStr = "";
             if (isSoulMode) {
-                totalStr = `${(Math.abs(balanceCp) / 100000).toFixed(2)} Seelenmünzen`;
+                // DEUTSCHE FORMATIERUNG IM CHAT
+                totalStr = `${(Math.abs(balanceCp) / 100000).toFixed(2).replace('.', ',')} Seelenmünzen`;
             } else {
                 const formatted = this._formatCurrency(balanceCp);
                 totalStr = `${formatted.gp}g ${formatted.sp}s ${formatted.cp}k`;
