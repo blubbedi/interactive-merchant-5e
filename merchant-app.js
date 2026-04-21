@@ -98,6 +98,7 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         return super.close(options);
     }
 
+    // --- DRAG & DROP ---
     _canDragStart(selector) { return true; }
     _canDragDrop(selector) { return true; }
 
@@ -116,9 +117,10 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         const data = TextEditor.getDragEventData(event);
         if (data.type !== "MerchantItem") return;
         const { itemId, type } = data.payload;
-        this._addToCart(itemId, type);
+        await this._addToCart(itemId, type);
     }
 
+    // --- HILFSFUNKTIONEN ---
     _getSoulCoinQty(actor) {
         if (!actor) return 0;
         const item = actor.items.find(i => i.name === "Seelenmünze");
@@ -177,11 +179,15 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             item.system.quantity = remainingQty;
             item.isStackFull = (remainingQty === 0);
 
+            // Bugfix: Sicherheitsabfrage für fehlende Preise bei Custom-Items
+            const priceValue = item.system.price?.value || 0;
+            const priceDenom = item.system.price?.denomination || "gp";
+
             if (isSoulMode) {
-                const gpPrice = this._toCopper(item.system.price.value, item.system.price.denomination) / 100;
+                const gpPrice = this._toCopper(priceValue, priceDenom) / 100;
                 item.displayPrice = (gpPrice / 1000).toFixed(3) + " SC";
             } else {
-                item.displayPrice = item.system.price.value + " " + item.system.price.denomination;
+                item.displayPrice = priceValue + " " + priceDenom;
             }
 
             const key = categories[item.type] ? item.type : "loot";
@@ -215,14 +221,14 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
 
         let totalBuyCp = 0;
         this.tradeState.buyCart.forEach(item => {
-            const basePrice = this._toCopper(item.price, item.denom);
+            const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
             const finalPrice = Math.floor(basePrice * buyFactor);
             totalBuyCp += (finalPrice * item.quantity);
         });
         
         let totalSellCp = 0;
         this.tradeState.sellCart.forEach(item => {
-            const basePrice = this._toCopper(item.price, item.denom);
+            const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
             const finalPrice = Math.floor(basePrice * sellFactor);
             totalSellCp += (finalPrice * item.quantity);
         });
@@ -297,16 +303,22 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
     activateListeners(html) {
         super.activateListeners(html);
         
-        html.find('.merchant-inventory .item').dblclick(ev => this._addToCart(ev.currentTarget.dataset.itemId, "buy"));
-        html.find('.player-inventory .item').dblclick(ev => this._addToCart(ev.currentTarget.dataset.itemId, "sell"));
+        // Bugfix: Explizites Binden von Drag&Drop
+        if (this._dragDrop) {
+            this._dragDrop.forEach(d => d.bind(html[0]));
+        }
+        
+        html.find('.merchant-inventory .item').dblclick(async ev => await this._addToCart(ev.currentTarget.dataset.itemId, "buy"));
+        html.find('.player-inventory .item').dblclick(async ev => await this._addToCart(ev.currentTarget.dataset.itemId, "sell"));
 
-        html.find('.cart-item').click(ev => {
+        html.find('.cart-item').click(async ev => {
             const { index, type } = ev.currentTarget.dataset;
             const cart = (type === "buy" ? this.tradeState.buyCart : this.tradeState.sellCart);
             const item = cart[index];
             if (item.quantity > 1) item.quantity--; else cart.splice(index, 1);
-            this.render(); 
-            this._updateFlag({ buyCart: this.tradeState.buyCart, sellCart: this.tradeState.sellCart });
+            
+            // Bugfix: Nur Flag updaten, das Neuladen übernimmt der Hook
+            await this._updateFlag({ buyCart: this.tradeState.buyCart, sellCart: this.tradeState.sellCart });
         });
 
         html.find('.haggle-btn').click(async ev => {
@@ -363,7 +375,7 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
         await this._updateFlag({ sellFactor: newSellFactor, buyFactor: newBuyFactor, haggleAttempted: true });
     }
 
-    _addToCart(itemId, type) {
+    async _addToCart(itemId, type) {
         const sourceActor = game.actors.get(type === "buy" ? this.merchantId : this.playerId);
         const item = sourceActor?.items.get(itemId);
         if (!item) return;
@@ -376,10 +388,20 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
             if (existingEntry.quantity < maxQty) existingEntry.quantity++;
             else { ui.notifications.warn("Nicht genug auf Lager."); return; }
         } else {
-            cart.push({ id: item.id, name: item.name, img: item.img, price: item.system.price.value||0, denom: item.system.price.denomination||"gp", quantity: 1, maxQty: maxQty });
+            // Bugfix: Sicheres Auslesen der Preise
+            cart.push({ 
+                id: item.id, 
+                name: item.name, 
+                img: item.img, 
+                price: item.system.price?.value || 0, 
+                denom: item.system.price?.denomination || "gp", 
+                quantity: 1, 
+                maxQty: maxQty 
+            });
         }
-        this.render();
-        this._updateFlag({ buyCart: this.tradeState.buyCart, sellCart: this.tradeState.sellCart });
+        
+        // Bugfix: await nutzen, um das Render-Verhalten der UI zu synchronisieren
+        await this._updateFlag({ buyCart: this.tradeState.buyCart, sellCart: this.tradeState.sellCart });
     }
 
     async _executeTrade() {
@@ -395,14 +417,14 @@ window.MerchantTradeApp = class MerchantTradeApp extends Application {
 
         let totalBuyCp = 0;
         this.tradeState.buyCart.forEach(item => {
-            const basePrice = this._toCopper(item.price, item.denom);
+            const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
             const finalPrice = Math.floor(basePrice * buyFactor);
             totalBuyCp += (finalPrice * item.quantity);
         });
         
         let totalSellCp = 0;
         this.tradeState.sellCart.forEach(item => {
-            const basePrice = this._toCopper(item.price, item.denom);
+            const basePrice = this._toCopper(item.price || 0, item.denom || "gp");
             const finalPrice = Math.floor(basePrice * sellFactor);
             totalSellCp += (finalPrice * item.quantity);
         });

@@ -8,20 +8,23 @@
     <div class="trade-container">
         <section class="inventory-column merchant-inventory">
             <div class="column-header-container merchant-bg">
-                <div class="portrait-wrapper"><img src="{{merchant.img}}"></div>
+                <div class="portrait-wrapper">
+                    <img src="{{merchant.img}}" title="Händler">
+                </div>
                 <div class="header-controls">
                     <h3>{{merchant.name}}</h3>
                     <div class="currency-display">
                         {{#if isSoulMode}}
-                            <span class="currency-item">{{merchantMoney}} <i class="fas fa-ghost" style="color: #00bcd4;"></i> SC</span>
+                            <span class="currency-item" title="Seelenmünzen">{{merchantMoney}} <i class="fas fa-ghost" style="color: #00bcd4;"></i> SC</span>
                         {{else}}
-                            <span class="currency-item">{{merchantCurrency.gp}} <i class="fas fa-coins gp"></i></span>
-                            <span class="currency-item">{{merchantCurrency.sp}} <i class="fas fa-coins sp"></i></span>
-                            <span class="currency-item">{{merchantCurrency.cp}} <i class="fas fa-coins cp"></i></span>
+                            <span class="currency-item" title="Gold">{{merchantCurrency.gp}} <i class="fas fa-coins gp"></i></span>
+                            <span class="currency-item" title="Silber">{{merchantCurrency.sp}} <i class="fas fa-coins sp"></i></span>
+                            <span class="currency-item" title="Kupfer">{{merchantCurrency.cp}} <i class="fas fa-coins cp"></i></span>
                         {{/if}}
                     </div>
                 </div>
             </div>
+            
             <div class="items-list scrollable">
                 {{#each merchantCategories as |cat key|}}
                     <div class="category-header">{{cat.label}}</div>
@@ -30,7 +33,11 @@
                         <li class="item {{#if item.isStackFull}}out-of-stock{{/if}}" data-item-id="{{item._id}}" draggable="true">
                             <div class="item-name">
                                 <img src="{{item.img}}" width="28" height="28"/>
-                                <span>{{item.name}} (x{{item.system.quantity}})</span>
+                                <span>
+                                    {{item.name}} 
+                                    {{#unless item.isStackFull}}<b style="color:#4b4a44; font-size:0.9em;">(x{{item.system.quantity}})</b>{{/unless}}
+                                    {{#if item.isStackFull}}<b style="color:#8b0000; font-size:0.8em; margin-left:5px;">(LEER)</b>{{/if}}
+                                </span>
                             </div>
                             <span class="price">{{item.displayPrice}}</span>
                         </li>
@@ -41,53 +48,82 @@
         </section>
 
         <section class="cart-column">
-            <h3>Warenkorb</h3>
+            <h3><i class="fas fa-shopping-basket"></i> Warenkorb</h3>
             <div class="cart-box scrollable">
                 {{#each buyCart as |item i|}}
-                <div class="cart-item buy" data-index="{{i}}" data-type="buy">
-                    <span>{{item.name}} x{{item.quantity}}</span>
-                    <b>{{item.price}} {{item.denom}}</b>
+                <div class="cart-item buy" data-index="{{i}}" data-type="buy" title="Entfernen">
+                    <div style="display:flex; align-items:center;">
+                        <i class="fas fa-arrow-right" style="margin-right:5px; color:#2e7d32;"></i>
+                        <span>{{item.name}} <b>(x{{item.quantity}})</b></span>
+                    </div>
+                    <div style="font-weight:bold; font-size:0.9em;">{{item.price}} {{item.denom}}</div>
                 </div>
                 {{/each}}
                 {{#each sellCart as |item i|}}
-                <div class="cart-item sell" data-index="{{i}}" data-type="sell">
-                    <span>{{item.name}} x{{item.quantity}}</span>
-                    <b>{{item.price}} {{item.denom}}</b>
+                <div class="cart-item sell" data-index="{{i}}" data-type="sell" title="Entfernen">
+                    <div style="display:flex; align-items:center;">
+                        <i class="fas fa-arrow-left" style="margin-right:5px; color:#c62828;"></i>
+                        <span>{{item.name}} <b>(x{{item.quantity}})</b></span>
+                    </div>
+                    <div style="font-weight:bold; font-size:0.9em;">{{item.price}} {{item.denom}}</div>
                 </div>
                 {{/each}}
             </div>
-            {{#unless isGM}}{{#unless haggleAttempted}}
+            
+            {{#unless isGM}}
+                {{#unless haggleAttempted}}
                 <div class="haggle-box">
-                    <p>Feilschen:</p>
+                    <p style="margin: 0 0 5px 0; font-weight: bold; color:#4b4a44;">Verhandeln:</p>
                     <div style="display: flex; gap: 5px; justify-content: center;">
-                        <button type="button" class="haggle-btn" data-skill="per"><i class="fas fa-comment-dots"></i></button>
-                        <button type="button" class="haggle-btn" data-skill="int"><i class="fas fa-fist-raised"></i></button>
-                        <button type="button" class="haggle-btn" data-skill="dec"><i class="fas fa-mask"></i></button>
+                        <button type="button" class="haggle-btn" data-skill="per" title="Überzeugen"><i class="fas fa-comment-dots"></i></button>
+                        <button type="button" class="haggle-btn" data-skill="int" title="Einschüchtern"><i class="fas fa-fist-raised"></i></button>
+                        <button type="button" class="haggle-btn" data-skill="dec" title="Täuschen"><i class="fas fa-mask"></i></button>
                     </div>
                 </div>
-            {{/unless}}{{/unless}}
+                {{/unless}}
+            {{/unless}}
+
             <div class="balance-box">
-                <div class="total-row"><span>Summe:</span> <span>{{formattedBalance}}</span></div>
-                <div style="text-align:center; font-size: 0.9em;">{{#if isPlayerPaying}}Spieler zahlt{{else}}Spieler erhält{{/if}}</div>
+                <div class="total-row" style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span>Summe:</span>
+                    <span class="{{#if isPlayerPaying}}negative{{else}}positive{{/if}}">
+                        {{formattedBalance}}
+                    </span>
+                </div>
+                <div style="text-align:center; margin-top:5px; font-style:italic; font-size:0.9em;">
+                    {{#if isPlayerPaying}}Spieler zahlt{{else}}Spieler erhält{{/if}}
+                </div>
+                <div style="text-align:center; font-size:0.8em; color:#555; margin-top:4px; border-top:1px dashed #999; padding-top:2px;">
+                    Kurs: Kauf {{buyFactorDisplay}}% | Verk {{sellFactorDisplay}}%
+                    {{#if haggleAttempted}} <i class="fas fa-check-circle" title="Verhandelt" style="color:#2e7d32;"></i>{{/if}}
+                </div>
+                {{#if currencyError}}
+                <div style="background: #ffebee; color: #b71c1c; border: 1px solid #b71c1c; padding: 4px; margin-top: 5px; font-size: 0.9em; text-align: center; font-weight: bold; border-radius:3px;">
+                    <i class="fas fa-exclamation-triangle"></i> {{currencyError}}
+                </div>
+                {{/if}}
             </div>
         </section>
 
         <section class="inventory-column player-inventory">
-             <div class="column-header-container player-bg">
-                <div class="portrait-wrapper"><img src="{{playerCharacter.img}}"></div>
-                 <div class="header-controls">
+            <div class="column-header-container player-bg">
+                <div class="portrait-wrapper">
+                    <img src="{{playerCharacter.img}}" title="Spieler">
+                </div>
+                <div class="header-controls">
                     <h3>{{playerCharacter.name}}</h3>
                     <div class="currency-display">
                         {{#if isSoulMode}}
-                            <span class="currency-item">{{playerMoney}} <i class="fas fa-ghost" style="color: #00bcd4;"></i> SC</span>
+                            <span class="currency-item" title="Seelenmünzen">{{playerMoney}} <i class="fas fa-ghost" style="color: #00bcd4;"></i> SC</span>
                         {{else}}
-                            <span class="currency-item">{{playerCurrency.gp}} <i class="fas fa-coins gp"></i></span>
-                            <span class="currency-item">{{playerCurrency.sp}} <i class="fas fa-coins sp"></i></span>
-                            <span class="currency-item">{{playerCurrency.cp}} <i class="fas fa-coins cp"></i></span>
+                            <span class="currency-item" title="Gold">{{playerCurrency.gp}} <i class="fas fa-coins gp"></i></span>
+                            <span class="currency-item" title="Silber">{{playerCurrency.sp}} <i class="fas fa-coins sp"></i></span>
+                            <span class="currency-item" title="Kupfer">{{playerCurrency.cp}} <i class="fas fa-coins cp"></i></span>
                         {{/if}}
                     </div>
                 </div>
             </div>
+            
             <div class="items-list scrollable">
                 {{#each playerCategories as |cat key|}}
                     <div class="category-header">{{cat.label}}</div>
@@ -96,7 +132,11 @@
                         <li class="item {{#if item.isStackFull}}out-of-stock{{/if}}" data-item-id="{{item._id}}" draggable="true">
                             <div class="item-name">
                                 <img src="{{item.img}}" width="28" height="28"/>
-                                <span>{{item.name}} (x{{item.system.quantity}})</span>
+                                <span>
+                                    {{item.name}} 
+                                    {{#unless item.isStackFull}}<b style="color:#4b4a44; font-size:0.9em;">(x{{item.system.quantity}})</b>{{/unless}}
+                                    {{#if item.isStackFull}}<b style="color:#8b0000; font-size:0.8em; margin-left:5px;">(LEER)</b>{{/if}}
+                                </span>
                             </div>
                             <span class="price">{{item.displayPrice}}</span>
                         </li>
@@ -109,10 +149,16 @@
 
     <footer class="sheet-footer">
         {{#if isGM}}
-            <button type="button" class="execute-trade" style="width:100%"><i class="fas fa-gavel"></i> Handel erzwingen</button>
+            <button type="button" class="execute-trade" style="background: linear-gradient(to bottom, #555, #333); color:#fff; width:100%; border:1px solid #000;" {{#unless canTrade}}disabled{{/unless}}>
+                <i class="fas fa-gavel"></i> Handel erzwingen (GM)
+            </button>
         {{else}}
-            <button type="button" class="player-cancel" style="width:45%">Abbrechen</button>
-            <button type="button" class="player-accept" style="width:45%">Abschließen</button>
+            <button type="button" class="player-cancel" style="width:45%;">
+                <i class="fas fa-times"></i> Abbrechen
+            </button>
+            <button type="button" class="player-accept" style="width:45%;" {{#unless canTrade}}disabled{{/unless}}>
+                <i class="fas fa-check"></i> Abschließen
+            </button>
         {{/if}}
     </footer>
 </form>
