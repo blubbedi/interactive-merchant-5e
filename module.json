@@ -1,0 +1,26 @@
+{
+  "id": "interactive-merchant-5e",
+  "title": "Interactive Merchant 5e",
+  "description": "Ein interaktives Händler-System mit Warenkorb, Feilschen-Mechanik und Seelenmünzen-Modus.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "11"
+  },
+  "authors": [
+    {
+      "name": "blubbedi"
+    }
+  ],
+  "esmodules": [
+    "merchant-app.js"
+  ],
+  "styles": [
+    "style.css"
+  ],
+  "systems": [
+    "dnd5e"
+  ],
+  "manifest": "https://github.com/blubbedi/interactive-merchant-5e/releases/latest/download/module.json",
+  "download": "https://github.com/blubbedi/interactive-merchant-5e/releases/latest/download/module.zip"
+}
